@@ -1,0 +1,57 @@
+:root {
+  --positive: #16a34a;
+  --negative: #dc2626;
+  --bg: #ffffff;
+  --fg: #111827;
+  --border: #e5e7eb;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+
+.top-nav { display: flex; gap: 1.5rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+
+.dashboard, .transactions-page { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+.summary-card { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+.summary-label { font-size: 0.8rem; color: #6b7280; }
+.summary-value { font-size: 1.4rem; font-weight: 600; margin-top: 0.25rem; }
+.prices-as-of { grid-column: 1 / -1; font-size: 0.8rem; color: #6b7280; }
+
+table { width: 100%; border-collapse: collapse; overflow-x: auto; display: block; }
+th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.closed-row { opacity: 0.6; }
+
+.charts-row { display: flex; flex-wrap: wrap; gap: 2rem; margin: 1.5rem 0; }
+.legend { list-style: none; padding: 0; font-size: 0.85rem; }
+.legend li { display: flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0; }
+.swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.pnl-row { display: grid; grid-template-columns: 50px 1fr 1fr; align-items: center; gap: 0.5rem; margin: 0.3rem 0; }
+.pnl-bar-track { height: 14px; }
+.pnl-bar { height: 14px; border-radius: 3px; }
+.pnl-bar.positive { background: var(--positive); }
+.pnl-bar.negative { background: var(--negative); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 3px; }
+.dot.realized { background: #6366f1; }
+.dot.unrealized { background: #f59e0b; }
+
+.import-panel { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; margin-bottom: 1rem; padding: 1rem; border: 1px dashed var(--border); border-radius: 8px; }
+.import-errors { max-height: 200px; overflow-y: auto; font-size: 0.85rem; color: var(--negative); width: 100%; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+.pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+
+.empty-state, .loading-state { color: #6b7280; padding: 1rem 0; }
+.error-state { color: var(--negative); padding: 0.5rem 0; }
+.success-state { color: var(--positive); padding: 0.5rem 0; }
+
+@media (max-width: 640px) {
+  .charts-row { flex-direction: column; }
+}
