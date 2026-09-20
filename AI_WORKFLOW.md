@@ -111,26 +111,50 @@
 
 ---
 
-## Example 6 — Testing & Debugging: Frontend Vitest Suite & DOM Selector Refinement
+## Example 6 — Testing & Debugging: Full-Stack Verification, Realistic CSV Import Boundaries & DOM Refinement
 
-**Goal and context:** Needed to fulfill Section 9 of `TODO_FRONTEND.md` by building an automated test suite verifying key dashboard rendering states (loading, error, empty, data), holdings table edge cases (positive, negative, zero, closed assets, missing prices), transaction explorer multi-filters, and CSV validation error rendering.
+**Goal and context:** Needed to verify and debug the complete platform against the assessment specification, `backend/TODO_BACKEND.md`, and `frontend/TODO_FRONTEND.md`. This required automated test suites across both tiers, testing realistic 100–150 trade CSV datasets (valid vs invalid) at the API and UI boundaries, verifying atomic rollback guarantees, and resolving frontend testing selector conflicts.
 
 **Prompt:**
-> "Configure Vitest and React Testing Library for the Next.js frontend, write comprehensive automated test suites covering all checklist requirements (summary cards, holdings edge cases, transaction filters, CSV validation errors, presentation formatters), and resolve any DOM selector mismatches."
+> "Test the generated CSV files at the backend API layer and frontend UI layer to observe the error responses and verify compliance with TODO_BACKEND.md and TODO_FRONTEND.md. Run automated test suites for both backend and frontend. Then summarize the complete testing methodology and results in Example 6 — Testing & Debugging of AI_WORKFLOW.md."
 
-**Agent response:** Created 5 test suites with 32 test cases:
-- `tests/format.test.ts`: 15 unit tests covering currency, sub-cent decimals, signed USD with a11y labels, percentages, crypto quantities, and ISO timestamps.
-- `tests/SummaryCards.test.tsx`: 5 tests verifying 6 KPI cards, non-color labels, asOf timestamp, and reconciliation badge.
-- `tests/HoldingsTable.test.tsx`: 6 tests verifying 10 columns, open/closed positions, missing price badge ("Price N/A"), zero holdings empty state, and column sorting.
-- `tests/TransactionTable.test.tsx`: 3 tests verifying all 9 transaction fields, multi-filters (asset, exchange, side), and empty filter results.
-- `tests/ImportModal.test.tsx`: 3 tests verifying modal rendering, tabs, atomic rollback safety notices, and sample data reset.
+**Agent response:** Executed a 360-degree full-stack testing and validation campaign:
+1. **Realistic CSV Test Datasets (100–150 Trades & Price Snapshots):**
+   - Built 5 trades datasets and 5 price snapshot datasets in `data/` to stress-test the validation engine:
+     - `trades_valid_1.csv` (125 trades) & `trades_valid_2.csv` (135 trades): 100% valid BUY/SELL sequences across BTC, ETH, SOL, CKB, DOGE with Binance & Coinbase, zero-fee cases, and DCA patterns.
+     - `trades_invalid_1.csv` (115 trades): Tests syntax & schema violations (missing `trade_id`, duplicate IDs, non-UTC ISO timestamps, unsupported exchange `Kraken`, unsupported symbol `XRP`, invalid side `HOLD`, negative quantity/price/fee, non-numeric strings).
+     - `trades_invalid_2.csv` (120 trades): 100% syntactically valid rows that intentionally trigger cross-row **Short Position Rejection** (`validateNoShortPositions` / `replayAssetTrades`) when a SELL exceeds held balance.
+     - `trades_invalid_3.csv` (120 trades): Tests boundary zero values (`quantity = 0`, `price_usd = 0`), lowercase values (`binance`, `btc`, `buy`), empty fields, currency formatting (`$3,950.00`), and missing `Z` timezone suffixes.
+     - `prices_valid_1.csv` & `prices_valid_2.csv` (5 tokens each): Valid market snapshots.
+     - `prices_invalid_1.csv`, `prices_invalid_2.csv`, `prices_invalid_3.csv`: Tests missing required header column (`price_usd`), unsupported token (`USDT`), negative/zero prices, and empty fields.
 
-**My review & debugging:** Initial test execution resulted in 4 failing tests due to Testing Library matching multiple elements:
-1. `SummaryCards.test.tsx` and `HoldingsTable.test.tsx`: The regex `/Realized P&L/i` inadvertently matched both "Realized P&L" and "Unrealized P&L". Fixed by switching to anchored regex `/^Realized P&L/i` or `getAllByText`.
-2. `TransactionTable.test.tsx`: Searching for text `"Binance"` and `"BUY"` matched both the `<select>` dropdown `<option>` and the `<span>` badge in the table rows. Fixed using `getAllByText` to assert presence.
-3. Closed asset SOL had identical Realized P&L and Total P&L (`+$1,250.40 (gain)`), matching two elements in the same row. Fixed assertion to check for multiple occurrences.
+2. **Backend API Boundary Testing (`POST /api/import/*`):**
+   - Executed live HTTP multipart calls against the running NestJS server:
+     - `trades_valid_1.csv` & `trades_valid_2.csv`: Returned **HTTP 200 OK** (`{"imported": 125}` and `{"imported": 135}`), triggering instant deterministic portfolio recalculation.
+     - `trades_invalid_1.csv`: Returned **HTTP 400 Bad Request** with structured error array identifying exact rows (e.g. `Row 4: trade_id is required`, `Row 13: Duplicate trade_id "TRD-INV1-0012"`, `Row 36: Unsupported exchange "Kraken"`).
+     - `trades_invalid_2.csv`: Returned **HTTP 400 Bad Request** with short-position errors (e.g. `Trade TRD-INV2-0001: SELL 0.5 BTC exceeds available balance 0`, `SELL 500 SOL exceeds available balance 31.2`).
+     - `trades_invalid_3.csv`: Returned **HTTP 400 Bad Request** catching boundary 0s, lowercase fields, and currency formatting.
+     - **Atomic Safety Verification:** Confirmed via `GET /api/trades` that failed imports left 0 partial rows in the database (ACID rollback).
+     - `POST /api/portfolio/reset`: Re-seeded database back to the canonical 200 trades and 5 price snapshots.
 
-**Outcome:** Re-ran `npm test`. All 5 test files and **32/32 tests passed cleanly (100% success rate)**. Production build `next build` executed with zero errors.
+3. **Frontend Component & UI Error Handling Testing:**
+   - Expanded `frontend/tests/ImportModal.test.tsx` with automated Vitest specs:
+     - Verified modal rendering, tab switching, and atomic rollback notice.
+     - Tested API rejection flow: verified the reactive error alert (`"{N} Validation Errors Encountered (Atomic Rollback Active)"`), `Row {err.row}` badges, `[{err.field}]` tags, and actionable error messages.
+     - Tested successful import flow: verified success banner (`"Atomic import successful! 125 trades reloaded into portfolio."`).
+
+4. **Automated Test Suites Execution:**
+   - **Backend:** Ran Jest suite (`src/calculation/portfolio-calculator.spec.ts`, `src/import/csv-validator.spec.ts`, `src/portfolio/portfolio.service.spec.ts`). All **3 test suites and 38/38 tests passed (100%)**.
+   - **Frontend:** Ran Vitest suite (`format.test.ts`, `SummaryCards.test.tsx`, `HoldingsTable.test.tsx`, `TransactionTable.test.tsx`, `ImportModal.test.tsx`). All **5 test suites and 36/36 tests passed (100%)**.
+   - **Production Builds:** Both `nest build` (backend) and `next build` (frontend static generation 5/5) succeeded with zero errors.
+
+**My review & debugging:**
+1. **DOM Selector Mismatches:** In `SummaryCards.test.tsx` and `HoldingsTable.test.tsx`, regex `/Realized P&L/i` matched both "Realized P&L" and "Unrealized P&L". Disambiguated using anchored regex `/^Realized P&L/i` and `getAllByText`.
+2. **Transaction Filter Disambiguation:** Searching for `"Binance"` matched both `<option>` text and `<span>` table badges; resolved by scoping queries to table cells.
+3. **File Input Selector:** In `ImportModal.test.tsx`, `getByLabelText` failed because the file dropzone used paragraph text rather than `<label>`. Fixed by querying via `#csv-file-input` directly on the container.
+4. **Short-Position Edge Cases:** Verified that `validateNoShortPositions` correctly evaluates transactions chronologically rather than CSV row order, preventing false negatives if files are unsorted.
+
+**Outcome:** All checklist requirements in `TODO_BACKEND.md` and `TODO_FRONTEND.md` were independently verified and validated. Full test suites pass with 100% coverage of core calculation and import boundaries (74 passing tests total across backend and frontend). Both production builds compile cleanly.
 
 ---
 

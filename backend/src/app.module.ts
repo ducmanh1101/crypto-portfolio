@@ -22,6 +22,11 @@ const dbImports: (DynamicModule | Promise<DynamicModule>)[] = usePostgres
         username: process.env.DB_USERNAME || 'postgres',
         password: process.env.DB_PASSWORD || 'postgrespassword',
         database: process.env.DB_DATABASE || 'crypto_portfolio',
+        ssl:
+          process.env.DB_SSL === 'true' ||
+          (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost'))
+            ? { rejectUnauthorized: false }
+            : false,
         entities: [TradeEntity, PriceSnapshotEntity],
         synchronize: true,
         autoLoadEntities: true,

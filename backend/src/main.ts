@@ -12,8 +12,15 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   if (process.env.USE_POSTGRES !== 'false') {
-    const host = process.env.DB_HOST || 'localhost';
-    const port = parseInt(process.env.DB_PORT || '5432', 10);
+    let host = process.env.DB_HOST || 'localhost';
+    let port = parseInt(process.env.DB_PORT || '5432', 10);
+    if (process.env.DATABASE_URL && !process.env.DB_HOST) {
+      try {
+        const parsed = new URL(process.env.DATABASE_URL);
+        host = parsed.hostname;
+        port = parseInt(parsed.port || '5432', 10);
+      } catch {}
+    }
     const reachable = await isPostgresListening(host, port);
 
     if (reachable) {
@@ -63,8 +70,8 @@ async function bootstrap() {
   }
 
   const appPort = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
-  await app.listen(appPort);
-  logger.log(`Backend is running on: http://localhost:${appPort}`);
+  await app.listen(appPort, '0.0.0.0');
+  logger.log(`Backend is running on: http://0.0.0.0:${appPort}`);
   logger.log(`Swagger UI is available at: http://localhost:${appPort}/api/docs`);
   logger.log(`Swagger JSON is available at: http://localhost:${appPort}/api/docs-json`);
 }
