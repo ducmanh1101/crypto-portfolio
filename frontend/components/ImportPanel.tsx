@@ -1,79 +1,143 @@
 'use client';
 
-import { useState } from 'react';
-import { importTradesCsv, importPricesCsv } from '../lib/api';
-import { ImportError } from '../lib/types';
+import React, { useState } from 'react';
+import { UploadCloud, RotateCcw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useImportMutations } from '../lib/hooks/useImport';
+import { ValidationErrorDto } from '../lib/types';
+import { ImportModal } from './ImportModal';
 
-/**
- * Import/re-import control for trades.csv + prices.csv. Surfaces
- * per-row validation errors returned by the backend (see
- * backend/src/import/csv-validator.ts) rather than a generic failure message.
- */
 export function ImportPanel() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [inlineMessage, setInlineMessage] = useState<string | null>(null);
+  const [inlineErrors, setInlineErrors] = useState<ValidationErrorDto[]>([]);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errors, setErrors] = useState<ImportError[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
 
-  async function handleTradesUpload(file: File) {
+  const { importTradesMutation, importPricesMutation, resetDataMutation } = useImportMutations();
+
+  const handleTradesUpload = async (file: File) => {
     setStatus('loading');
-    setErrors([]);
+    setInlineErrors([]);
+    setInlineMessage(null);
     try {
-      const res = await importTradesCsv(file);
+      const res = await importTradesMutation.mutateAsync(file);
       setStatus('success');
-      setMessage(`Imported ${res.imported} trades.`);
-      // Reload dashboard data — in a full implementation, use router.refresh()
-      // (this is a server component parent) or a client-side data hook.
-      window.location.reload();
+      setInlineMessage(`Successfully imported ${res.imported} trades.`);
     } catch (err: any) {
       setStatus('error');
-      setMessage(err?.message ?? 'Import failed');
-      setErrors(err?.errors ?? []);
+      setInlineMessage(err?.message || 'Import failed validation');
+      setInlineErrors(err?.errors || []);
     }
-  }
+  };
 
-  async function handlePricesUpload(file: File) {
+  const handlePricesUpload = async (file: File) => {
     setStatus('loading');
+    setInlineErrors([]);
+    setInlineMessage(null);
     try {
-      await importPricesCsv(file);
+      const res = await importPricesMutation.mutateAsync(file);
       setStatus('success');
-      window.location.reload();
+      setInlineMessage(`Successfully imported ${res.imported} prices.`);
     } catch (err: any) {
       setStatus('error');
-      setMessage(err?.message ?? 'Import failed');
+      setInlineMessage(err?.message || 'Import failed');
+      setInlineErrors(err?.errors || []);
     }
-  }
+  };
 
   return (
-    <div className="import-panel">
-      <label>
-        Import trades.csv
-        <input
-          type="file"
-          accept=".csv"
-          onChange={(e) => e.target.files?.[0] && handleTradesUpload(e.target.files[0])}
-        />
-      </label>
-      <label>
-        Import prices.csv
-        <input
-          type="file"
-          accept=".csv"
-          onChange={(e) => e.target.files?.[0] && handlePricesUpload(e.target.files[0])}
-        />
-      </label>
+    <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-4 sm:p-5 mb-6 shadow-sm dark:shadow-md transition-colors">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
+            <UploadCloud className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Data Management &amp; Import</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Upload trades.csv or prices.csv with atomic pre-validation
+            </p>
+          </div>
+        </div>
 
-      {status === 'loading' && <div className="loading-state">Importing…</div>}
-      {message && <div className={status === 'error' ? 'error-state' : 'success-state'}>{message}</div>}
-      {errors.length > 0 && (
-        <ul className="import-errors">
-          {errors.slice(0, 20).map((e, i) => (
-            <li key={i}>
-              Row {e.row}{e.field ? ` (${e.field})` : ''}: {e.message}
-            </li>
-          ))}
-          {errors.length > 20 && <li>…and {errors.length - 20} more errors</li>}
-        </ul>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Quick file inputs */}
+          <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 cursor-pointer transition-colors">
+            <span>Import trades.csv</span>
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleTradesUpload(e.target.files[0])}
+            />
+          </label>
+
+          <label className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 cursor-pointer transition-colors">
+            <span>Import prices.csv</span>
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handlePricesUpload(e.target.files[0])}
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500 transition-colors shadow-sm"
+          >
+            <span>Open Advanced Importer</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Loading state */}
+      {status === 'loading' && (
+        <div className="mt-3 text-xs text-cyan-600 dark:text-cyan-400 flex items-center gap-2 font-mono">
+          <div className="w-3 h-3 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <span>Validating &amp; importing dataset atomically…</span>
+        </div>
       )}
+
+      {/* Message feedback */}
+      {inlineMessage && (
+        <div
+          className={`mt-3 p-3 rounded-xl text-xs flex items-center gap-2 ${
+            status === 'success'
+              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
+              : 'bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-300'
+          }`}
+        >
+          {status === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+          ) : (
+            <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+          )}
+          <span>{inlineMessage}</span>
+        </div>
+      )}
+
+      {/* Validation errors list */}
+      {inlineErrors.length > 0 && (
+        <div className="mt-3 bg-slate-50 dark:bg-slate-950/80 border border-rose-500/30 rounded-xl p-3 text-xs text-rose-800 dark:text-rose-300 max-h-40 overflow-y-auto">
+          <strong className="block mb-1 text-rose-700 dark:text-rose-200">
+            {inlineErrors.length} Validation Errors (No partial data saved):
+          </strong>
+          <ul className="space-y-1">
+            {inlineErrors.map((err, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="font-mono text-rose-600 dark:text-rose-400 font-bold">Row {err.row}:</span>
+                <span>
+                  {err.field ? `[${err.field}] ` : ''}
+                  {err.message}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <ImportModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }

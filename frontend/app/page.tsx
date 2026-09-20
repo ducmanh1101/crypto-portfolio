@@ -1,39 +1,81 @@
-import { fetchPortfolioSnapshot } from '../lib/api';
+'use client';
+
+import React, { useState } from 'react';
+import { usePortfolio } from '../lib/hooks/usePortfolio';
 import { SummaryCards } from '../components/SummaryCards';
 import { HoldingsTable } from '../components/HoldingsTable';
-import { AllocationChart, PnlByAssetChart } from '../components/Charts';
+import { Charts } from '../components/Charts';
 import { ImportPanel } from '../components/ImportPanel';
+import { ImportModal } from '../components/ImportModal';
+import { ErrorBanner } from '../components/ErrorBanner';
+import { CardSkeleton, ChartSkeleton, TableSkeleton } from '../components/Skeleton';
 
-export default async function DashboardPage() {
-  // Server component: fetch fails (e.g. backend down, no data imported yet)
-  // are caught here so the page still renders with an actionable empty/error
-  // state instead of crashing.
-  let snapshot;
-  let loadError: string | null = null;
-  try {
-    snapshot = await fetchPortfolioSnapshot();
-  } catch (e) {
-    loadError = e instanceof Error ? e.message : 'Failed to load portfolio';
-  }
+export default function DashboardPage() {
+  const { snapshot, summary, positions, isLoading, isError, error, refetch, reconciliation } =
+    usePortfolio();
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   return (
-    <main className="dashboard">
-      <h1>Portfolio Dashboard</h1>
+    <main className="space-y-8 animate-fade-in" aria-label="Portfolio Dashboard">
+      {/* Page Title & Subtitle */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Portfolio Analytics
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Real-time portfolio valuation, weighted-average cost basis, and P&amp;L performance
+          </p>
+        </div>
+      </div>
+
+      {/* Quick Import Panel */}
       <ImportPanel />
 
-      {loadError && <div className="error-state">Couldn&apos;t load portfolio: {loadError}</div>}
+      {/* Global Error Banner */}
+      {isError && (
+        <ErrorBanner
+          title="Failed to Load Portfolio Snapshot"
+          message={error?.message || 'Unable to connect to the backend analytics service.'}
+          onRetry={() => refetch()}
+        />
+      )}
 
-      {snapshot && (
-        <>
-          <SummaryCards summary={snapshot.summary} />
-          <div className="charts-row">
-            <AllocationChart positions={snapshot.positions} />
-            <PnlByAssetChart positions={snapshot.positions} />
+      {/* Loading Skeletons */}
+      {isLoading && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
           </div>
-          <h2>Holdings</h2>
-          <HoldingsTable positions={snapshot.positions} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartSkeleton />
+            <ChartSkeleton />
+          </div>
+          <TableSkeleton rows={6} cols={10} />
+        </div>
+      )}
+
+      {/* Main Data Content */}
+      {!isLoading && !isError && summary && (
+        <>
+          {/* 1. Headline KPI Cards */}
+          <SummaryCards summary={summary} reconciliation={reconciliation} />
+
+          {/* 2. Visual Charts (Allocation & P&L) */}
+          <Charts positions={positions} />
+
+          {/* 3. Holdings & Valuation Table */}
+          <HoldingsTable
+            positions={positions}
+            onImportClick={() => setIsImportModalOpen(true)}
+          />
         </>
       )}
+
+      {/* Import Modal */}
+      <ImportModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} />
     </main>
   );
 }

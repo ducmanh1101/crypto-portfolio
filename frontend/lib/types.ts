@@ -1,9 +1,19 @@
-// Mirrors backend/src/calculation/types.ts but with plain strings/numbers,
-// since Decimal values cross the HTTP boundary as JSON strings and are
-// only re-parsed to Decimal if/when the frontend needs to do further math
-// (mostly it just formats them for display).
+/**
+ * Types strictly aligned with backend OpenAPI 3.0 specification (backend/swagger.json).
+ * Numeric and Decimal values are transmitted as JSON strings over HTTP to prevent precision loss.
+ */
 
-export interface AssetPosition {
+export interface PortfolioSummaryDto {
+  currentValue: string;
+  currentCostBasis: string;
+  realizedPnl: string;
+  unrealizedPnl: string;
+  totalPnl: string;
+  totalFeesPaid: string;
+  pricesAsOf: string | null;
+}
+
+export interface HoldingDto {
   symbol: string;
   quantityHeld: string;
   averageCost: string;
@@ -17,22 +27,23 @@ export interface AssetPosition {
   totalFeesPaid: string;
 }
 
-export interface PortfolioSummary {
-  currentValue: string;
-  currentCostBasis: string;
-  realizedPnl: string;
-  unrealizedPnl: string;
-  totalPnl: string;
-  totalFeesPaid: string;
-  pricesAsOf: string | null;
+export interface PortfolioSnapshotDto {
+  summary: PortfolioSummaryDto;
+  positions: HoldingDto[];
 }
 
-export interface PortfolioSnapshot {
-  summary: PortfolioSummary;
-  positions: AssetPosition[];
+export interface PriceSnapshotDto {
+  asOf: string;
+  symbol: string;
+  priceUsd: string;
 }
 
-export interface TradeRow {
+export interface PricesResponseDto {
+  asOf: string | null;
+  prices: PriceSnapshotDto[];
+}
+
+export interface TransactionDto {
   tradeId: string;
   timestamp: string;
   exchange: string;
@@ -44,15 +55,49 @@ export interface TradeRow {
   grossValueUsd: string;
 }
 
-export interface TradesResponse {
-  items: TradeRow[];
+export interface PaginatedTransactionsDto {
+  items: TransactionDto[];
   total: number;
   page: number;
   pageSize: number;
 }
 
-export interface ImportError {
+export interface ValidationErrorDto {
   row: number;
   field?: string;
   message: string;
 }
+
+export interface ImportErrorResponseDto {
+  message: string;
+  errors: ValidationErrorDto[];
+}
+
+export interface ImportResultDto {
+  imported: number;
+}
+
+export interface ResetResultDto {
+  message: string;
+  tradesImported: number;
+  pricesImported: number;
+}
+
+export interface TradesQueryDto {
+  symbol?: string;
+  exchange?: string;
+  side?: string;
+  from?: string;
+  to?: string;
+  sort?: 'asc' | 'desc';
+  page?: string | number;
+  pageSize?: string | number;
+}
+
+// Backward-compatible type aliases
+export type AssetPosition = HoldingDto;
+export type PortfolioSummary = PortfolioSummaryDto;
+export type PortfolioSnapshot = PortfolioSnapshotDto;
+export type TradeRow = TransactionDto;
+export type TradesResponse = PaginatedTransactionsDto;
+export type ImportError = ValidationErrorDto;
