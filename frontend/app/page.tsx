@@ -30,7 +30,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Import Panel */}
-      <ImportPanel />
+      <ImportPanel onOpenAdvanced={() => setIsImportModalOpen(true)} />
 
       {/* Global Error Banner */}
       {isError && (

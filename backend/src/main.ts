@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import { isPostgresListening } from './database/postgres-check';
+import { AllExceptionsFilter } from './common/http-exception.filter';
 
 dotenv.config();
 
@@ -39,7 +40,18 @@ async function bootstrap() {
   // Dynamic import of AppModule so it reads the updated process.env.USE_POSTGRES
   const { AppModule } = await import('./app.module');
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
+
+  // Global Exception Filter for observable and standardized failure states
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // CORS Configuration
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  app.enableCors({
+    origin: process.env.NODE_ENV === 'production' && process.env.CORS_ORIGIN ? allowedOrigins : true,
+    credentials: true,
+  });
 
   // Swagger Documentation Setup
   const swaggerConfig = new DocumentBuilder()
@@ -62,8 +74,12 @@ async function bootstrap() {
   try {
     const swaggerJson = JSON.stringify(document, null, 2);
     fs.writeFileSync(path.resolve(process.cwd(), 'swagger.json'), swaggerJson);
-    const rootPath = path.resolve(process.cwd(), '../swagger.json');
-    fs.writeFileSync(rootPath, swaggerJson);
+    const rootDir = path.resolve(process.cwd(), '..');
+    if (fs.existsSync(rootDir)) {
+      try {
+        fs.writeFileSync(path.resolve(rootDir, 'swagger.json'), swaggerJson);
+      } catch {}
+    }
     logger.log(`Generated OpenAPI spec at swagger.json`);
   } catch (err) {
     logger.warn(`Could not export swagger.json: ${err}`);

@@ -3,6 +3,10 @@
  * Numeric and Decimal values are transmitted as JSON strings over HTTP to prevent precision loss.
  */
 
+export type SupportedSymbol = 'BTC' | 'ETH' | 'SOL' | 'CKB' | 'DOGE';
+export type SupportedExchange = 'Binance' | 'Coinbase';
+export type TradeSide = 'BUY' | 'SELL';
+
 export interface PortfolioSummaryDto {
   currentValue: string;
   currentCostBasis: string;
@@ -14,7 +18,7 @@ export interface PortfolioSummaryDto {
 }
 
 export interface HoldingDto {
-  symbol: string;
+  symbol: SupportedSymbol | string;
   quantityHeld: string;
   averageCost: string;
   currentPrice: string;

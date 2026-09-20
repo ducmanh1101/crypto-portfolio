@@ -25,10 +25,12 @@ const dbImports: (DynamicModule | Promise<DynamicModule>)[] = usePostgres
         ssl:
           process.env.DB_SSL === 'true' ||
           (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('localhost'))
-            ? { rejectUnauthorized: false }
+            ? {
+                rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true',
+              }
             : false,
         entities: [TradeEntity, PriceSnapshotEntity],
-        synchronize: true,
+        synchronize: process.env.NODE_ENV !== 'production',
         autoLoadEntities: true,
         retryAttempts: 3,
         retryDelay: 1500,

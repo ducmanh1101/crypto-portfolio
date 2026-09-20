@@ -32,7 +32,12 @@ async function handleResponse<T>(res: Response): Promise<T> {
     } catch {
       // Body not JSON
     }
-    const message = errorData?.message || `Request failed with status ${res.status}`;
+    const rawMessage = errorData?.message;
+    const message = Array.isArray(rawMessage)
+      ? rawMessage.join(', ')
+      : typeof rawMessage === 'string'
+      ? rawMessage
+      : `Request failed with status ${res.status}`;
     const errors = errorData?.errors;
     throw new ApiError(message, res.status, errors);
   }

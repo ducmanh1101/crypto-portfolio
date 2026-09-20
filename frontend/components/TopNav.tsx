@@ -13,9 +13,10 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { resetSampleData, fetchPrices } from '../lib/api';
+import { resetSampleData } from '../lib/api';
 import { PORTFOLIO_QUERY_KEY } from '../lib/hooks/usePortfolio';
 import { TRADES_QUERY_KEY } from '../lib/hooks/useTrades';
+import { usePrices, PRICES_QUERY_KEY } from '../lib/hooks/usePrices';
 import { ImportModal } from './ImportModal';
 import { ThemeToggle } from './ThemeToggle';
 import { formatUsd } from '../lib/format';
@@ -27,17 +28,10 @@ export function TopNav() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
-  const [tickerPrices, setTickerPrices] = useState<Array<{ symbol: string; priceUsd: string }>>([]);
 
-  useEffect(() => {
-    fetchPrices()
-      .then((res) => {
-        if (res?.prices) {
-          setTickerPrices(res.prices);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  // Reactively subscribe to current price snapshot via TanStack Query
+  const { data: pricesData } = usePrices();
+  const tickerPrices = pricesData?.prices ?? [];
 
   const handleResetData = async () => {
     if (!window.confirm('Reset portfolio to sample files (data/trades.csv & data/prices.csv)?')) {
@@ -48,6 +42,7 @@ export function TopNav() {
       const res = await resetSampleData();
       await queryClient.invalidateQueries({ queryKey: PORTFOLIO_QUERY_KEY });
       await queryClient.invalidateQueries({ queryKey: [TRADES_QUERY_KEY] });
+      await queryClient.invalidateQueries({ queryKey: PRICES_QUERY_KEY });
       setResetMessage(`Reset complete (${res.tradesImported} trades, ${res.pricesImported} prices).`);
       setTimeout(() => setResetMessage(null), 4000);
     } catch (err: any) {

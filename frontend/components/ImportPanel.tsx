@@ -6,7 +6,11 @@ import { useImportMutations } from '../lib/hooks/useImport';
 import { ValidationErrorDto } from '../lib/types';
 import { ImportModal } from './ImportModal';
 
-export function ImportPanel() {
+interface ImportPanelProps {
+  onOpenAdvanced?: () => void;
+}
+
+export function ImportPanel({ onOpenAdvanced }: ImportPanelProps = {}) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inlineMessage, setInlineMessage] = useState<string | null>(null);
   const [inlineErrors, setInlineErrors] = useState<ValidationErrorDto[]>([]);
@@ -83,7 +87,13 @@ export function ImportPanel() {
 
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              if (onOpenAdvanced) {
+                onOpenAdvanced();
+              } else {
+                setIsModalOpen(true);
+              }
+            }}
             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500 transition-colors shadow-sm"
           >
             <span>Open Advanced Importer</span>
@@ -137,7 +147,10 @@ export function ImportPanel() {
         </div>
       )}
 
-      <ImportModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      {/* Render local modal only when parent does not supply onOpenAdvanced */}
+      {!onOpenAdvanced && (
+        <ImportModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      )}
     </div>
   );
 }

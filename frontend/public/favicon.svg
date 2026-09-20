@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="50%" stop-color="#090D1A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <!-- Border Glow Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="45%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#A855F7"/>
+    </linearGradient>
+
+    <!-- Brand Cyan-Purple Gradient -->
+    <linearGradient id="kGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="40%" stop-color="#38BDF8"/>
+      <stop offset="70%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#A855F7"/>
+    </linearGradient>
+
+    <!-- Accent Cyan Gradient -->
+    <linearGradient id="cyanSparkle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67E8F9"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+
+    <!-- Subtle Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle Base Container -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#bgGrad)"/>
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="none" stroke="url(#borderGrad)" stroke-width="18" stroke-opacity="0.9"/>
+
+  <!-- Ambient Glow Behind Monogram -->
+  <circle cx="270" cy="256" r="130" fill="#06B6D4" opacity="0.18" filter="url(#glow)"/>
+  <circle cx="340" cy="180" r="90" fill="#A855F7" opacity="0.18" filter="url(#glow)"/>
+
+  <!-- Geometric "K" Monogram -->
+  <!-- Left Vertical Spine -->
+  <rect x="130" y="120" width="62" height="272" rx="24" fill="url(#kGrad)"/>
+
+  <!-- Upper Diagonal Wing -->
+  <path d="M 204 266 C 218 248, 236 226, 252 206 L 332 136 C 344 125, 362 127, 372 140 L 378 148 C 388 161, 386 179, 373 190 L 282 270 C 272 278, 260 285, 246 288 Z" fill="url(#kGrad)"/>
+
+  <!-- Lower Diagonal Wing -->
+  <path d="M 230 252 L 348 368 C 359 379, 360 397, 349 408 L 341 416 C 330 427, 312 427, 301 416 L 194 308 C 208 290, 220 271, 230 252 Z" fill="url(#kGrad)"/>
+
+  <!-- Accent Crystal Sparkle Star at Top Right -->
+  <g transform="translate(378, 116)" filter="url(#glow)">
+    <!-- 4-pointed sparkle -->
+    <path d="M 0 -36 C 2 -12, 12 -2, 36 0 C 12 2, 2 12, 0 36 C -2 12, -12 2, -36 0 C -12 -2, -2 -12, 0 -36 Z" fill="url(#cyanSparkle)"/>
+    <circle cx="0" cy="0" r="7" fill="#FFFFFF"/>
+  </g>
+</svg>
+

@@ -31,6 +31,18 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
 
   const { importTradesMutation, importPricesMutation, resetDataMutation } = useImportMutations();
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const currentFile = activeTab === 'trades' ? tradesFile : pricesFile;
@@ -127,6 +139,8 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="import-dialog-title"
+      aria-describedby="import-dialog-desc"
+      onClick={onClose}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-fade-in"
     >
       <div
@@ -143,7 +157,7 @@ export function ImportModal({ isOpen, onClose }: ImportModalProps) {
               <h2 id="import-dialog-title" className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
                 Import / Re-import Dataset
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p id="import-dialog-desc" className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Atomic CSV import with pre-commit validation and short-position replay
               </p>
             </div>

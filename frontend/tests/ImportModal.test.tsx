@@ -38,6 +38,16 @@ describe('ImportModal Component', () => {
     expect(screen.getByText(/Zero Partial State:/i)).toBeInTheDocument();
   });
 
+  it('calls onClose when Escape key is pressed', () => {
+    const onCloseMock = vi.fn();
+    vi.spyOn(useImportHook, 'useImportMutations').mockReturnValue(mockMutations as any);
+
+    render(<ImportModal isOpen={true} onClose={onCloseMock} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(onCloseMock).toHaveBeenCalledTimes(1);
+  });
+
   it('renders validation error table when API rejects import', async () => {
     const errorWithDetails = {
       message: 'Import failed validation',
