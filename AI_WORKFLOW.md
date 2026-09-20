@@ -18,6 +18,7 @@
 **My review:** Checked that `portfolio-calculator.ts` has zero imports from `@nestjs/*` — confirmed by running `grep nestjs` on the file, empty result. Ran the resulting unit tests without any Nest test module bootstrapping to confirm they're fast/isolated.
 
 **Outcome:** Accepted the structure as proposed. This is the layout used in `backend/src/`.
+- **Relevant commit:** [`b0aebed`](https://github.com/ducmanh1101/crypto-portfolio/commit/b0aebeda717cf842f2522cde37c1de5fdb3dd0cc) - *init project & backend base*
 
 ---
 
@@ -38,6 +39,7 @@
 **My review:** Reviewed and approved the design plan artifact (`implementation_plan.md`). Confirmed that presentation logic remained strictly separated from backend calculation results, and that all 10 checklist sections in `TODO_FRONTEND.md` were addressed without adding unnecessary blockchain or authentication overhead.
 
 **Outcome:** Approved execution. The agent scaffolded dependencies, built the component hierarchy, connected the query hooks, and fulfilled all requirements.
+- **Relevant commits:** [`8804bfc`](https://github.com/ducmanh1101/crypto-portfolio/commit/8804bfc7452dfa1faa7f9dcd915d27378442ff87) (*Add Swagger docs, API DTOs & annotate controllers*) & [`bf0a03c`](https://github.com/ducmanh1101/crypto-portfolio/commit/bf0a03ce5bda8ac7637b54624bb7eefa8f2bc281) (*Build crypto portfolio dashboard frontend*)
 
 ---
 
@@ -57,6 +59,7 @@
 **My review:** Checked edge cases with 0, negative values, null prices, and sub-cent numbers. Verified that calculation reconciliation accurately matched backend outputs.
 
 **Outcome:** Adopted the formatting architecture across all cards, charts, and tables.
+- **Relevant commit:** [`bf0a03c`](https://github.com/ducmanh1101/crypto-portfolio/commit/bf0a03ce5bda8ac7637b54624bb7eefa8f2bc281) - *Build crypto portfolio dashboard frontend*
 
 ---
 
@@ -82,6 +85,7 @@
 5. Checked that all items in `backend/TODO_BACKEND.md` were ticked `[x]` and `README.md` was updated with Docker setup and running instructions.
 
 **Outcome:** Accepted the entire implementation. The backend is now fully functional, persistent with PostgreSQL, thoroughly tested, and resilient against missing services.
+- **Relevant commits:** [`b0aebed`](https://github.com/ducmanh1101/crypto-portfolio/commit/b0aebeda717cf842f2522cde37c1de5fdb3dd0cc) (*init project & backend base*) & [`8804bfc`](https://github.com/ducmanh1101/crypto-portfolio/commit/8804bfc7452dfa1faa7f9dcd915d27378442ff87) (*Add Swagger docs, API DTOs & annotate controllers*)
 
 ---
 
@@ -108,6 +112,7 @@
 3. Checked that all items in `frontend/TODO_FRONTEND.md` were ticked `[x]`.
 
 **Outcome:** Accepted the implementation. The frontend dashboard is fully functional, type-safe, reactive, and delivers an exceptional user experience.
+- **Relevant commit:** [`bf0a03c`](https://github.com/ducmanh1101/crypto-portfolio/commit/bf0a03ce5bda8ac7637b54624bb7eefa8f2bc281) - *Build crypto portfolio dashboard frontend*
 
 ---
 
@@ -138,15 +143,16 @@
      - `POST /api/portfolio/reset`: Re-seeded database back to the canonical 200 trades and 5 price snapshots.
 
 3. **Frontend Component & UI Error Handling Testing:**
-   - Expanded `frontend/tests/ImportModal.test.tsx` with automated Vitest specs:
-     - Verified modal rendering, tab switching, and atomic rollback notice.
+   - Expanded `frontend/tests/ImportModal.test.tsx` and `frontend/tests/TopNav.test.tsx` with automated Vitest specs:
+     - Verified modal rendering, tab switching, Escape key dismissal, and atomic rollback notice.
      - Tested API rejection flow: verified the reactive error alert (`"{N} Validation Errors Encountered (Atomic Rollback Active)"`), `Row {err.row}` badges, `[{err.field}]` tags, and actionable error messages.
      - Tested successful import flow: verified success banner (`"Atomic import successful! 125 trades reloaded into portfolio."`).
 
 4. **Automated Test Suites Execution:**
-   - **Backend:** Ran Jest suite (`src/calculation/portfolio-calculator.spec.ts`, `src/import/csv-validator.spec.ts`, `src/portfolio/portfolio.service.spec.ts`). All **3 test suites and 38/38 tests passed (100%)**.
-   - **Frontend:** Ran Vitest suite (`format.test.ts`, `SummaryCards.test.tsx`, `HoldingsTable.test.tsx`, `TransactionTable.test.tsx`, `ImportModal.test.tsx`). All **5 test suites and 36/36 tests passed (100%)**.
-   - **Production Builds:** Both `nest build` (backend) and `next build` (frontend static generation 5/5) succeeded with zero errors.
+   - **Backend:** Ran Jest suite (`portfolio-calculator.spec.ts`, `csv-validator.spec.ts`, `portfolio.service.spec.ts`, `http-exception.filter.spec.ts`). All **4 test suites and 41/41 tests passed (100%)**.
+   - **Frontend:** Ran Vitest suite (`format.test.ts`, `SummaryCards.test.tsx`, `HoldingsTable.test.tsx`, `TransactionTable.test.tsx`, `ImportModal.test.tsx`, `TopNav.test.tsx`). All **6 test suites and 38/38 tests passed (100%)**.
+   - **Overall Suite:** **10 test suites and 79/79 automated tests passing (100%)**.
+   - **Production Builds:** Both `nest build` (backend) and `next build` (frontend static generation 6/6) succeeded with zero errors.
 
 **My review & debugging:**
 1. **DOM Selector Mismatches:** In `SummaryCards.test.tsx` and `HoldingsTable.test.tsx`, regex `/Realized P&L/i` matched both "Realized P&L" and "Unrealized P&L". Disambiguated using anchored regex `/^Realized P&L/i` and `getAllByText`.
@@ -154,7 +160,8 @@
 3. **File Input Selector:** In `ImportModal.test.tsx`, `getByLabelText` failed because the file dropzone used paragraph text rather than `<label>`. Fixed by querying via `#csv-file-input` directly on the container.
 4. **Short-Position Edge Cases:** Verified that `validateNoShortPositions` correctly evaluates transactions chronologically rather than CSV row order, preventing false negatives if files are unsorted.
 
-**Outcome:** All checklist requirements in `TODO_BACKEND.md` and `TODO_FRONTEND.md` were independently verified and validated. Full test suites pass with 100% coverage of core calculation and import boundaries (74 passing tests total across backend and frontend). Both production builds compile cleanly.
+**Outcome:** All checklist requirements in `TODO_BACKEND.md` and `TODO_FRONTEND.md` were independently verified and validated. Full test suites pass with 100% coverage of core calculation and import boundaries (79 passing tests total across backend and frontend). Both production builds compile cleanly.
+- **Relevant commits:** [`98d81ea`](https://github.com/ducmanh1101/crypto-portfolio/commit/98d81ea64d852089b0a1f0559eb8fc78cf7d8fd5) (*Add test datasets, Dockerfiles, and DB checks*), [`8459c72`](https://github.com/ducmanh1101/crypto-portfolio/commit/8459c7225d66c4be83447311da34c82da2abb910) (*Add validation CSV fixtures and deps*), & [`dfb01b5`](https://github.com/ducmanh1101/crypto-portfolio/commit/dfb01b598962a866497a2b6c141a5b1835d0e5df) (*Harden backend API and refresh frontend UX*)
 
 ---
 
@@ -188,5 +195,6 @@
    - Dark: Obsidian backdrop (`#080b11`), deep slate panels, subtle glassmorphic glow.
 5. **Interactive Generative UI Preview:** Created `portfolio_preview.html` allowing immediate in-chat theme toggling and layout inspection.
 
-**Outcome:** The redesigned UI successfully broke away from generic templates, delivering an avant-garde crypto terminal with full theme customization. All 32 automated tests continue to pass (100%), and Next.js production build succeeded with zero errors.
+**Outcome:** The redesigned UI successfully broke away from generic templates, delivering an avant-garde crypto terminal with full theme customization. All 38 automated frontend tests continue to pass (100%), and Next.js production build succeeded with zero errors.
+- **Relevant commits:** [`bf0a03c`](https://github.com/ducmanh1101/crypto-portfolio/commit/bf0a03ce5bda8ac7637b54624bb7eefa8f2bc281) (*Build crypto portfolio dashboard frontend*) & [`dfb01b5`](https://github.com/ducmanh1101/crypto-portfolio/commit/dfb01b598962a866497a2b6c141a5b1835d0e5df) (*Harden backend API and refresh frontend UX*)
 
