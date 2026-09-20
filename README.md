@@ -28,10 +28,10 @@ The application is deployed to production cloud platforms and accessible publicl
 
 ## 📂 Sample Data & Reset Instructions
 
-The application uses the supplied CSV files as its single source of truth. As required by the assessment specification, all supplied datasets and fixtures remain permanently available in the repository root [`data/`](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/data):
+The application uses the supplied CSV files as its single source of truth. As required by the assessment specification, all supplied datasets and fixtures remain permanently available in the repository root [`data/`](https://github.com/ducmanh1101/crypto-portfolio/tree/main/data):
 
-* [`data/trades.csv`](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/data/trades.csv): ~200 synthetic BUY and SELL trades over 6 months across Binance & Coinbase for `BTC`, `ETH`, `SOL`, `CKB`, and `DOGE`.
-* [`data/prices.csv`](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/data/prices.csv): Market price snapshot as of `2026-03-31T23:59:59.000Z`.
+* [`data/trades.csv`](https://github.com/ducmanh1101/crypto-portfolio/blob/main/data/trades.csv): ~200 synthetic BUY and SELL trades over 6 months across Binance & Coinbase for `BTC`, `ETH`, `SOL`, `CKB`, and `DOGE`.
+* [`data/prices.csv`](https://github.com/ducmanh1101/crypto-portfolio/blob/main/data/prices.csv): Market price snapshot as of `2026-03-31T23:59:59.000Z`.
 
 ### How to Load or Reset Sample Data
 
@@ -43,7 +43,7 @@ Evaluators can reload or reset the data at any time using any of the following 3
    * This immediately calls `POST /api/portfolio/reset`, clears the database/store, and re-seeds the canonical 200 trades and price snapshots.
 2. **Method 2: Interactive CSV Importer (Drag & Drop)**
    * Click **"Import CSV"** or **"Open Advanced Importer"** on the dashboard.
-   * Drag and drop [`data/trades.csv`](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/data/trades.csv) or [`data/prices.csv`](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/data/prices.csv) into the dropzone.
+   * Drag and drop [`data/trades.csv`](https://github.com/ducmanh1101/crypto-portfolio/blob/main/data/trades.csv) or [`data/prices.csv`](https://github.com/ducmanh1101/crypto-portfolio/blob/main/data/prices.csv) into the dropzone.
    * The backend executes atomic validation and replays trades before committing.
 3. **Method 3: Terminal / cURL API**
    ```bash
@@ -126,7 +126,7 @@ sequenceDiagram
 
 ## 🧮 Portfolio Calculation Approach
 
-The core engine is implemented as a set of pure deterministic functions in [`backend/src/calculation/portfolio-calculator.ts`](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/backend/src/calculation/portfolio-calculator.ts). It strictly implements the weighted-average cost basis algorithm specified in the assessment:
+The core engine is implemented as a set of pure deterministic functions in [`backend/src/calculation/portfolio-calculator.ts`](https://github.com/ducmanh1101/crypto-portfolio/blob/main/backend/src/calculation/portfolio-calculator.ts). It strictly implements the weighted-average cost basis algorithm specified in the assessment:
 
 ### 1. Chronological Processing
 Transactions are grouped by asset symbol (`BTC`, `ETH`, `SOL`, `CKB`, `DOGE`) and processed in **ascending UTC timestamp order**.
@@ -202,7 +202,7 @@ Starts a PostgreSQL 16 container on `localhost:5432` with database `crypto_portf
 
 #### Option B: In-Memory Fallback (Zero Setup)
 > [!TIP]
-> If PostgreSQL is not installed or running, the backend automatically detects socket unavailability via [`backend/src/database/postgres-check.ts`](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/backend/src/database/postgres-check.ts) and **falls back to in-memory mode** without crashing. Evaluators can run tests and local servers without spinning up Docker!
+> If PostgreSQL is not installed or running, the backend automatically detects socket unavailability via [`backend/src/database/postgres-check.ts`](https://github.com/ducmanh1101/crypto-portfolio/blob/main/backend/src/database/postgres-check.ts) and **falls back to in-memory mode** without crashing. Evaluators can run tests and local servers without spinning up Docker!
 
 ---
 
@@ -298,7 +298,7 @@ All tests run in isolated in-memory environments in **~3.0 seconds** and assert 
 Interactive Swagger UI and OpenAPI 3.0 specification are available at:
 * **Interactive Swagger UI:** [https://crypto-portfolio-api-x8e3.onrender.com/api/docs](https://crypto-portfolio-api-x8e3.onrender.com/api/docs) (or `http://localhost:3001/api/docs`)
 * **Raw OpenAPI JSON:** [https://crypto-portfolio-api-x8e3.onrender.com/api/docs-json](https://crypto-portfolio-api-x8e3.onrender.com/api/docs-json)
-* **Static OpenAPI Spec:** [`swagger.json`](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/swagger.json)
+* **Static OpenAPI Spec:** [`swagger.json`](https://github.com/ducmanh1101/crypto-portfolio/blob/main/swagger.json)
 
 ### Core Endpoints
 
@@ -350,4 +350,4 @@ Interactive Swagger UI and OpenAPI 3.0 specification are available at:
 
 ## 🤖 AI Workflow Documentation
 
-For the complete log of how AI coding agents (Google Antigravity with Gemini 3.8 Flash & Claude Code) were directed, verified, and corrected throughout development, see [AI_WORKFLOW.md](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/AI_WORKFLOW.md).
+For the complete log of how AI coding agents (Google Antigravity with Gemini 3.8 Flash & Claude Code) were directed, verified, and corrected throughout development, see [AI_WORKFLOW.md](https://github.com/ducmanh1101/crypto-portfolio/blob/main/AI_WORKFLOW.md).
