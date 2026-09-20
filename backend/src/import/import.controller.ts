@@ -6,23 +6,49 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import Papa from 'papaparse';
 import { validateImport, validatePricesImport } from './csv-validator';
 import { PortfolioStore } from '../portfolio/portfolio.service';
-import { ImportResult } from '../calculation/types';
+import {
+  FileUploadDto,
+  ImportErrorResponseDto,
+  ImportResultDto,
+} from '../dto/api.dto';
 
+@ApiTags('CSV Import & Management')
 @Controller('api/import')
 export class ImportController {
   constructor(private readonly store: PortfolioStore) {}
 
-  /**
-   * POST /api/import/trades — multipart upload of trades.csv.
-   * Validates the ENTIRE file before touching the store: an invalid file
-   * must never leave the app with a partial import (per assignment spec).
-   */
   @Post('trades')
   @UseInterceptors(FileInterceptor('file'))
-  async importTrades(@UploadedFile() file?: Express.Multer.File): Promise<ImportResult> {
+  @ApiOperation({
+    summary: 'Import / Re-import trades CSV',
+    description: 'Upload a multipart trades.csv file. Validates the entire file (columns, data types, ranges, duplicates, short positions) before atomic replacement in the database.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'CSV file with trades data (trade_id, timestamp, exchange, symbol, side, quantity, price_usd, fee_usd)',
+    type: FileUploadDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Trades imported successfully',
+    type: ImportResultDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation failed. No partial state saved (atomic rejection).',
+    type: ImportErrorResponseDto,
+  })
+  async importTrades(@UploadedFile() file?: Express.Multer.File): Promise<ImportResultDto> {
     if (!file || !file.buffer) {
       throw new BadRequestException('No file uploaded');
     }
@@ -45,10 +71,28 @@ export class ImportController {
     return { imported: result.trades.length };
   }
 
-  /** POST /api/import/prices — multipart upload of prices.csv. */
   @Post('prices')
   @UseInterceptors(FileInterceptor('file'))
-  async importPrices(@UploadedFile() file?: Express.Multer.File): Promise<ImportResult> {
+  @ApiOperation({
+    summary: 'Import / Re-import prices CSV',
+    description: 'Upload a multipart prices.csv file (as_of, symbol, price_usd). Atomically updates stored price snapshot.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'CSV file with price snapshot data (as_of, symbol, price_usd)',
+    type: FileUploadDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Prices imported successfully',
+    type: ImportResultDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation failed. No partial state saved.',
+    type: ImportErrorResponseDto,
+  })
+  async importPrices(@UploadedFile() file?: Express.Multer.File): Promise<ImportResultDto> {
     if (!file || !file.buffer) {
       throw new BadRequestException('No file uploaded');
     }

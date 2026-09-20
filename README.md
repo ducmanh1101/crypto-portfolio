@@ -137,7 +137,15 @@ npm run dev   # Runs on http://localhost:3000
 
 ---
 
-## API Endpoints
+---
+
+## API Documentation & Swagger
+
+Interactive Swagger UI and OpenAPI 3.0 specification are built-in:
+
+* **Swagger UI (Interactive Playground):** [http://localhost:3001/api/docs](http://localhost:3001/api/docs)
+* **OpenAPI Raw JSON Endpoint:** [http://localhost:3001/api/docs-json](http://localhost:3001/api/docs-json)
+* **Static OpenAPI File:** [`swagger.json`](file:///Users/phuongtrinh/Documents/GitHub/crypto-portfolio/swagger.json) (or `backend/swagger.json`) — ready for import into Postman, Insomnia, or frontend code-generation tools (`openapi-typescript-codegen`, `orval`, etc.).
 
 | Method | Endpoint | Description |
 |---|---|---|

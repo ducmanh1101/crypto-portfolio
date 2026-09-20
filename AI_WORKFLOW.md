@@ -63,17 +63,33 @@ test module bootstrapping to confirm they're fast/isolated.
 
 ---
 
-## Example 4 — [Implementation]
+## Example 4 — Implementation: Full backend completion, PostgreSQL integration, and atomic validation
 
-**Goal and context:**
+**Goal and context:** Needed to implement all unfinished requirements in `backend/TODO_BACKEND.md`,
+connect PostgreSQL persistence via Docker Compose / Local Postgres, ensure atomic CSV imports with
+strict validation, expose complete REST endpoints, and provide automated test suites while maintaining
+zero-friction local development.
 
 **Prompt:**
+> "trong thư mục backend xem file @backend/TODO_BACKEND.md và source code hiện tại. hãy hoàn thành
+> các chỉ mục có trong file MD xong mục nào check tick mục đó. Kết nối Database Postgre bằng Local
+> hoặc Docker và update lại cách run backend"
 
-**Agent response:**
+**Agent response:** Proposed and executed a comprehensive implementation plan:
+1. **Database & Docker:** Added `docker-compose.yml` for PostgreSQL 16, created `TradeEntity` and `PriceSnapshotEntity` with TypeORM (`numeric(28, 10)` precision), and implemented a proactive port checker (`postgres-check.ts`) in `main.ts` that automatically falls back to in-memory mode if Postgres isn't running, preventing server crashes during local dev.
+2. **Persistence & Atomicity:** Upgraded `PortfolioStore` with TypeORM transaction manager so trades CSV re-imports are committed atomically (ACID) and auto-seeds sample data on first boot if DB is empty.
+3. **Data Contracts & DTOs:** Defined explicit domain aliases (`Holding`, `Transaction`) and API boundary DTOs (`HoldingDto`, `TransactionDto`, `PortfolioSnapshotDto`) in `types.ts`, converting `Decimal` values to strings for JSON transport.
+4. **Validation & API:** Implemented strict ISO-8601 UTC regex and cross-row short-position validation in `csv-validator.ts`. Extended `TradesController` (case-insensitive filter, full-day date range, sorting, pagination) and `PortfolioController` (`/summary`, `/holdings`, `/prices`, `/reset`).
+5. **Testing:** Built comprehensive unit and integration test suites across 3 files (`portfolio-calculator.spec.ts`, `csv-validator.spec.ts`, `portfolio.service.spec.ts`) covering 38 test cases.
 
 **My review:**
+1. Ran `npm test` to ensure all 38 tests pass in isolated in-memory mode without external DB dependency (~2.4s execution time).
+2. Tested `npm run build` to confirm zero TypeScript compilation errors.
+3. Tested live API with curl: verified `/api/portfolio/summary`, `/api/portfolio/holdings`, `/api/trades` pagination, and `/api/portfolio/reset`.
+4. Tested atomic validation: uploaded an invalid CSV row (negative quantity); confirmed HTTP 400 rejection and verified stored trades remained unchanged.
+5. Checked that all items in `backend/TODO_BACKEND.md` were ticked `[x]` and `README.md` was updated with Docker setup and running instructions.
 
-**Outcome:**
+**Outcome:** Accepted the entire implementation. The backend is now fully functional, persistent with PostgreSQL, thoroughly tested, and resilient against missing services.
 
 ---
 

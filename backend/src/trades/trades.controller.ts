@@ -1,28 +1,31 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PortfolioStore } from '../portfolio/portfolio.service';
 import {
   PaginatedTransactionsDto,
+  TradesQueryDto,
   toTransactionDto,
 } from '../calculation/types';
 
-export interface TradesQuery {
-  symbol?: string;
-  exchange?: string;
-  side?: string;
-  from?: string; // ISO date or YYYY-MM-DD
-  to?: string; // ISO date or YYYY-MM-DD
-  sort?: 'asc' | 'desc'; // by timestamp, default desc
-  page?: string;
-  pageSize?: string;
-}
+export type TradesQuery = TradesQueryDto;
 
 /** GET /api/trades — powers the Transaction Explorer table. */
+@ApiTags('Transaction Explorer')
 @Controller('api/trades')
 export class TradesController {
   constructor(private readonly store: PortfolioStore) {}
 
   @Get()
-  async list(@Query() query: TradesQuery): Promise<PaginatedTransactionsDto> {
+  @ApiOperation({
+    summary: 'Search, filter, sort, and paginate transactions',
+    description: 'Returns transactions matching filter criteria (symbol, exchange, side, date range). Supports timestamp sorting (asc/desc) and pagination.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated transactions list returned successfully',
+    type: PaginatedTransactionsDto,
+  })
+  async list(@Query() query: TradesQueryDto): Promise<PaginatedTransactionsDto> {
     let trades = await this.store.getTrades();
 
     if (query.symbol) {

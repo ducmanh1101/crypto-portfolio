@@ -1,0 +1,813 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/portfolio": {
+      "get": {
+        "operationId": "PortfolioController_getSnapshot",
+        "summary": "Get full portfolio snapshot",
+        "description": "Returns aggregate summary metrics (total value, cost basis, realized/unrealized P&L, fees) and individual holdings per asset, computed fresh from the trade history.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Portfolio snapshot returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioSnapshotDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Portfolio & Analytics"
+        ]
+      }
+    },
+    "/api/portfolio/summary": {
+      "get": {
+        "operationId": "PortfolioController_getSummary",
+        "summary": "Get portfolio summary metrics only",
+        "description": "Returns high-level cards metrics (currentValue, currentCostBasis, realizedPnl, unrealizedPnl, totalPnl, totalFeesPaid, pricesAsOf).",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Portfolio summary returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioSummaryDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Portfolio & Analytics"
+        ]
+      }
+    },
+    "/api/portfolio/holdings": {
+      "get": {
+        "operationId": "PortfolioController_getHoldings",
+        "summary": "Get current asset holdings",
+        "description": "Returns array of current positions per asset with average cost, quantity held, market value, P&L, and portfolio allocation percentage.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Holdings list returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HoldingDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Portfolio & Analytics"
+        ]
+      }
+    },
+    "/api/portfolio/prices": {
+      "get": {
+        "operationId": "PortfolioController_getPrices",
+        "summary": "Get current price snapshot",
+        "description": "Returns latest market prices from prices.csv and the as_of timestamp.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Prices snapshot returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Portfolio & Analytics"
+        ]
+      }
+    },
+    "/api/prices": {
+      "get": {
+        "operationId": "PortfolioController_getPrices",
+        "summary": "Get current price snapshot",
+        "description": "Returns latest market prices from prices.csv and the as_of timestamp.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Prices snapshot returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Portfolio & Analytics"
+        ]
+      }
+    },
+    "/api/portfolio/reset": {
+      "post": {
+        "operationId": "PortfolioController_resetData",
+        "summary": "Reset dataset to sample files",
+        "description": "Clears current database and re-seeds initial data from data/trades.csv and data/prices.csv.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Portfolio reset successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Portfolio & Analytics"
+        ]
+      }
+    },
+    "/api/data/reset": {
+      "post": {
+        "operationId": "PortfolioController_resetData",
+        "summary": "Reset dataset to sample files",
+        "description": "Clears current database and re-seeds initial data from data/trades.csv and data/prices.csv.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Portfolio reset successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetResultDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Portfolio & Analytics"
+        ]
+      }
+    },
+    "/api/import/trades": {
+      "post": {
+        "operationId": "ImportController_importTrades",
+        "summary": "Import / Re-import trades CSV",
+        "description": "Upload a multipart trades.csv file. Validates the entire file (columns, data types, ranges, duplicates, short positions) before atomic replacement in the database.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "CSV file with trades data (trade_id, timestamp, exchange, symbol, side, quantity, price_usd, fee_usd)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/FileUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Trades imported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed. No partial state saved (atomic rejection).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CSV Import & Management"
+        ]
+      }
+    },
+    "/api/import/prices": {
+      "post": {
+        "operationId": "ImportController_importPrices",
+        "summary": "Import / Re-import prices CSV",
+        "description": "Upload a multipart prices.csv file (as_of, symbol, price_usd). Atomically updates stored price snapshot.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "CSV file with price snapshot data (as_of, symbol, price_usd)",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/FileUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Prices imported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed. No partial state saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "CSV Import & Management"
+        ]
+      }
+    },
+    "/api/trades": {
+      "get": {
+        "operationId": "TradesController_list",
+        "summary": "Search, filter, sort, and paginate transactions",
+        "description": "Returns transactions matching filter criteria (symbol, exchange, side, date range). Supports timestamp sorting (asc/desc) and pagination.",
+        "parameters": [
+          {
+            "name": "symbol",
+            "required": false,
+            "in": "query",
+            "description": "Filter by symbol (case-insensitive)",
+            "schema": {
+              "enum": [
+                "BTC",
+                "ETH",
+                "SOL",
+                "CKB",
+                "DOGE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "exchange",
+            "required": false,
+            "in": "query",
+            "description": "Filter by exchange (case-insensitive)",
+            "schema": {
+              "enum": [
+                "Binance",
+                "Coinbase"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "side",
+            "required": false,
+            "in": "query",
+            "description": "Filter by side (case-insensitive)",
+            "schema": {
+              "enum": [
+                "BUY",
+                "SELL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Start date in ISO format (e.g. 2025-10-01)",
+            "schema": {
+              "example": "2025-10-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "End date in ISO format (e.g. 2026-03-31)",
+            "schema": {
+              "example": "2026-03-31",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Sort by timestamp",
+            "schema": {
+              "default": "desc",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-based)",
+            "schema": {
+              "default": "1",
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (max 200)",
+            "schema": {
+              "default": "25",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated transactions list returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedTransactionsDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Transaction Explorer"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Crypto Portfolio Analytics API",
+    "description": "Interactive OpenAPI / Swagger specification for Crypto Portfolio Analytics, Holdings, and Transaction Explorer.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Portfolio & Analytics",
+      "description": "Portfolio summary, holding valuations, price snapshots, and dataset reset"
+    },
+    {
+      "name": "Transaction Explorer",
+      "description": "Query, filter, sort, and paginate historical trades"
+    },
+    {
+      "name": "CSV Import & Management",
+      "description": "Upload and atomically validate trades.csv and prices.csv files"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "PortfolioSummaryDto": {
+        "type": "object",
+        "properties": {
+          "currentValue": {
+            "type": "string",
+            "description": "Total current market valuation of the portfolio in USD",
+            "example": "60620.89161"
+          },
+          "currentCostBasis": {
+            "type": "string",
+            "description": "Total cost basis of all currently held assets in USD",
+            "example": "59969.237419301033835"
+          },
+          "realizedPnl": {
+            "type": "string",
+            "description": "Cumulative realized profit & loss from all historical SELL transactions",
+            "example": "-5052.9626879454661673"
+          },
+          "unrealizedPnl": {
+            "type": "string",
+            "description": "Current unrealized profit & loss on open positions in USD",
+            "example": "651.6541906989661648"
+          },
+          "totalPnl": {
+            "type": "string",
+            "description": "Total P&L (realized + unrealized) in USD",
+            "example": "-4401.3084972465000025"
+          },
+          "totalFeesPaid": {
+            "type": "string",
+            "description": "Total cumulative fees paid across all BUY and SELL transactions in USD",
+            "example": "2708.86"
+          },
+          "pricesAsOf": {
+            "type": "object",
+            "description": "UTC timestamp of the current price snapshot",
+            "example": "2026-03-31T23:59:59.000Z",
+            "nullable": true
+          }
+        },
+        "required": [
+          "currentValue",
+          "currentCostBasis",
+          "realizedPnl",
+          "unrealizedPnl",
+          "totalPnl",
+          "totalFeesPaid"
+        ]
+      },
+      "HoldingDto": {
+        "type": "object",
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "description": "Asset symbol",
+            "enum": [
+              "BTC",
+              "ETH",
+              "SOL",
+              "CKB",
+              "DOGE"
+            ],
+            "example": "BTC"
+          },
+          "quantityHeld": {
+            "type": "string",
+            "description": "Quantity of units currently held",
+            "example": "0.0774292"
+          },
+          "averageCost": {
+            "type": "string",
+            "description": "Weighted-average purchase cost per unit in USD (includes capitalized BUY fees)",
+            "example": "117711.89990106209051"
+          },
+          "currentPrice": {
+            "type": "string",
+            "description": "Current market price in USD from prices.csv",
+            "example": "111500"
+          },
+          "currentCostBasis": {
+            "type": "string",
+            "description": "Current cost basis of held units in USD",
+            "example": "9114.3382398193168182"
+          },
+          "currentValue": {
+            "type": "string",
+            "description": "Current market value in USD (quantityHeld * currentPrice)",
+            "example": "8633.3558"
+          },
+          "realizedPnl": {
+            "type": "string",
+            "description": "Cumulative realized P&L across all closed/partially closed positions",
+            "example": "-463.7459753271831822"
+          },
+          "unrealizedPnl": {
+            "type": "string",
+            "description": "Unrealized P&L (currentValue - currentCostBasis)",
+            "example": "-480.9824398193168182"
+          },
+          "totalPnl": {
+            "type": "string",
+            "description": "Total P&L (realized + unrealized)",
+            "example": "-944.7284151465000004"
+          },
+          "allocationPct": {
+            "type": "string",
+            "description": "Allocation percentage of total portfolio value (0.0 to 1.0)",
+            "example": "0.14241551997522657354"
+          },
+          "totalFeesPaid": {
+            "type": "string",
+            "description": "Total BUY + SELL fees paid for this asset",
+            "example": "486.42"
+          }
+        },
+        "required": [
+          "symbol",
+          "quantityHeld",
+          "averageCost",
+          "currentPrice",
+          "currentCostBasis",
+          "currentValue",
+          "realizedPnl",
+          "unrealizedPnl",
+          "totalPnl",
+          "allocationPct",
+          "totalFeesPaid"
+        ]
+      },
+      "PortfolioSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "description": "Aggregate portfolio metrics",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PortfolioSummaryDto"
+              }
+            ]
+          },
+          "positions": {
+            "description": "List of positions / holdings per asset",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HoldingDto"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "positions"
+        ]
+      },
+      "PriceSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "description": "UTC timestamp when the price was recorded",
+            "example": "2026-03-31T23:59:59.000Z"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "Asset symbol",
+            "enum": [
+              "BTC",
+              "ETH",
+              "SOL",
+              "CKB",
+              "DOGE"
+            ],
+            "example": "BTC"
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "Price in USD",
+            "example": "111500.00"
+          }
+        },
+        "required": [
+          "asOf",
+          "symbol",
+          "priceUsd"
+        ]
+      },
+      "PricesResponseDto": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "object",
+            "description": "Snapshot timestamp",
+            "example": "2026-03-31T23:59:59.000Z",
+            "nullable": true
+          },
+          "prices": {
+            "description": "Current price list by symbol",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceSnapshotDto"
+            }
+          }
+        },
+        "required": [
+          "prices"
+        ]
+      },
+      "ResetResultDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Status message",
+            "example": "Portfolio data reset successfully"
+          },
+          "tradesImported": {
+            "type": "number",
+            "description": "Number of trades reloaded",
+            "example": 200
+          },
+          "pricesImported": {
+            "type": "number",
+            "description": "Number of prices reloaded",
+            "example": 5
+          }
+        },
+        "required": [
+          "message",
+          "tradesImported",
+          "pricesImported"
+        ]
+      },
+      "FileUploadDto": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "CSV file to upload"
+          }
+        },
+        "required": [
+          "file"
+        ]
+      },
+      "ImportResultDto": {
+        "type": "object",
+        "properties": {
+          "imported": {
+            "type": "number",
+            "description": "Number of rows successfully imported and saved",
+            "example": 200
+          }
+        },
+        "required": [
+          "imported"
+        ]
+      },
+      "ValidationErrorDto": {
+        "type": "object",
+        "properties": {
+          "row": {
+            "type": "number",
+            "description": "Row index in CSV file (1-based, or 0 for header, -1 for cross-row)",
+            "example": 5
+          },
+          "field": {
+            "type": "string",
+            "description": "Name of the invalid column/field",
+            "example": "quantity"
+          },
+          "message": {
+            "type": "string",
+            "description": "Actionable error description",
+            "example": "quantity must be greater than zero"
+          }
+        },
+        "required": [
+          "row",
+          "message"
+        ]
+      },
+      "ImportErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Error summary message",
+            "example": "Import failed validation"
+          },
+          "errors": {
+            "description": "List of specific validation errors found in the CSV",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDto"
+            }
+          }
+        },
+        "required": [
+          "message",
+          "errors"
+        ]
+      },
+      "TransactionDto": {
+        "type": "object",
+        "properties": {
+          "tradeId": {
+            "type": "string",
+            "description": "Unique trade identifier",
+            "example": "TRD-0001"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Transaction timestamp in UTC ISO-8601",
+            "example": "2025-10-01T09:00:00.000Z"
+          },
+          "exchange": {
+            "type": "string",
+            "description": "Exchange where the trade was executed",
+            "enum": [
+              "Binance",
+              "Coinbase"
+            ],
+            "example": "Binance"
+          },
+          "symbol": {
+            "type": "string",
+            "description": "Asset symbol",
+            "enum": [
+              "BTC",
+              "ETH",
+              "SOL",
+              "CKB",
+              "DOGE"
+            ],
+            "example": "BTC"
+          },
+          "side": {
+            "type": "string",
+            "description": "Trade side",
+            "enum": [
+              "BUY",
+              "SELL"
+            ],
+            "example": "BUY"
+          },
+          "quantity": {
+            "type": "string",
+            "description": "Trade quantity",
+            "example": "0.03141403"
+          },
+          "priceUsd": {
+            "type": "string",
+            "description": "Execution price per unit in USD",
+            "example": "105507.74"
+          },
+          "feeUsd": {
+            "type": "string",
+            "description": "Fee paid in USD",
+            "example": "3.31"
+          },
+          "grossValueUsd": {
+            "type": "string",
+            "description": "Gross trade value (quantity * priceUsd) in USD",
+            "example": "3314.4233095922"
+          }
+        },
+        "required": [
+          "tradeId",
+          "timestamp",
+          "exchange",
+          "symbol",
+          "side",
+          "quantity",
+          "priceUsd",
+          "feeUsd",
+          "grossValueUsd"
+        ]
+      },
+      "PaginatedTransactionsDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Page items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransactionDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Total count of trades matching filter criteria",
+            "example": 200
+          },
+          "page": {
+            "type": "number",
+            "description": "Current page number (1-based)",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "description": "Page size limit",
+            "example": 25
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      }
+    }
+  }
+}

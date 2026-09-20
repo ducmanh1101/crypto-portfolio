@@ -1,6 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
 import { isPostgresListening } from './database/postgres-check';
 
 dotenv.config();
@@ -31,8 +34,38 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
 
+  // Swagger Documentation Setup
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Crypto Portfolio Analytics API')
+    .setDescription(
+      'Interactive OpenAPI / Swagger specification for Crypto Portfolio Analytics, Holdings, and Transaction Explorer.',
+    )
+    .setVersion('1.0.0')
+    .addTag('Portfolio & Analytics', 'Portfolio summary, holding valuations, price snapshots, and dataset reset')
+    .addTag('Transaction Explorer', 'Query, filter, sort, and paginate historical trades')
+    .addTag('CSV Import & Management', 'Upload and atomically validate trades.csv and prices.csv files')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document, {
+    customSiteTitle: 'Crypto Portfolio API Documentation',
+  });
+
+  // Export static swagger.json to disk for frontend integration
+  try {
+    const swaggerJson = JSON.stringify(document, null, 2);
+    fs.writeFileSync(path.resolve(process.cwd(), 'swagger.json'), swaggerJson);
+    const rootPath = path.resolve(process.cwd(), '../swagger.json');
+    fs.writeFileSync(rootPath, swaggerJson);
+    logger.log(`Generated OpenAPI spec at swagger.json`);
+  } catch (err) {
+    logger.warn(`Could not export swagger.json: ${err}`);
+  }
+
   const appPort = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;
   await app.listen(appPort);
   logger.log(`Backend is running on: http://localhost:${appPort}`);
+  logger.log(`Swagger UI is available at: http://localhost:${appPort}/api/docs`);
+  logger.log(`Swagger JSON is available at: http://localhost:${appPort}/api/docs-json`);
 }
 bootstrap();

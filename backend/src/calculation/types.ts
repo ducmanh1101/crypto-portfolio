@@ -93,67 +93,39 @@ export interface ImportResult {
 }
 
 // -------------------------------------------------------------
-// API / Presentation Boundary DTOs (strings for Decimal values)
+// API / Presentation Boundary DTOs (imported & re-exported from api.dto.ts)
 // -------------------------------------------------------------
+import {
+  PortfolioSummaryDto,
+  HoldingDto,
+  PortfolioSnapshotDto,
+  PriceSnapshotDto,
+  PricesResponseDto,
+  TransactionDto,
+  PaginatedTransactionsDto,
+  ImportResultDto,
+  ResetResultDto,
+  ValidationErrorDto,
+  ImportErrorResponseDto,
+  TradesQueryDto,
+  FileUploadDto,
+} from '../dto/api.dto';
 
-export interface HoldingDto {
-  symbol: Symbol;
-  quantityHeld: string;
-  averageCost: string;
-  currentPrice: string;
-  currentCostBasis: string;
-  currentValue: string;
-  realizedPnl: string;
-  unrealizedPnl: string;
-  totalPnl: string;
-  allocationPct: string;
-  totalFeesPaid: string;
-}
-
-export interface PortfolioSummaryDto {
-  currentValue: string;
-  currentCostBasis: string;
-  realizedPnl: string;
-  unrealizedPnl: string;
-  totalPnl: string;
-  totalFeesPaid: string;
-  pricesAsOf: string | null;
-}
-
-export interface PortfolioSnapshotDto {
-  summary: PortfolioSummaryDto;
-  positions: HoldingDto[];
-}
-
-export interface TransactionDto {
-  tradeId: string;
-  timestamp: string;
-  exchange: Exchange;
-  symbol: Symbol;
-  side: Side;
-  quantity: string;
-  priceUsd: string;
-  feeUsd: string;
-  grossValueUsd: string;
-}
-
-export interface PaginatedTransactionsDto {
-  items: TransactionDto[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
-export interface PriceSnapshotDto {
-  asOf: string;
-  symbol: Symbol;
-  priceUsd: string;
-}
-
-export interface PricesResponseDto {
-  asOf: string | null;
-  prices: PriceSnapshotDto[];
-}
+export {
+  PortfolioSummaryDto,
+  HoldingDto,
+  PortfolioSnapshotDto,
+  PriceSnapshotDto,
+  PricesResponseDto,
+  TransactionDto,
+  PaginatedTransactionsDto,
+  ImportResultDto,
+  ResetResultDto,
+  ValidationErrorDto,
+  ImportErrorResponseDto,
+  TradesQueryDto,
+  FileUploadDto,
+};
 
 // -------------------------------------------------------------
 // Conversion Helpers
