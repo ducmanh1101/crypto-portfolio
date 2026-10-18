@@ -49,7 +49,7 @@ async function bootstrap() {
     ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
     : ['http://localhost:3000', 'http://127.0.0.1:3000'];
   app.enableCors({
-    origin: process.env.NODE_ENV === 'production' && process.env.CORS_ORIGIN ? allowedOrigins : true,
+    origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
     credentials: true,
   });
 
@@ -70,19 +70,21 @@ async function bootstrap() {
     customSiteTitle: 'Crypto Portfolio API Documentation',
   });
 
-  // Export static swagger.json to disk for frontend integration
-  try {
-    const swaggerJson = JSON.stringify(document, null, 2);
-    fs.writeFileSync(path.resolve(process.cwd(), 'swagger.json'), swaggerJson);
-    const rootDir = path.resolve(process.cwd(), '..');
-    if (fs.existsSync(rootDir)) {
-      try {
-        fs.writeFileSync(path.resolve(rootDir, 'swagger.json'), swaggerJson);
-      } catch {}
+  // Export static swagger.json to disk in development for frontend integration
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      const swaggerJson = JSON.stringify(document, null, 2);
+      fs.writeFileSync(path.resolve(process.cwd(), 'swagger.json'), swaggerJson);
+      const rootDir = path.resolve(process.cwd(), '..');
+      if (fs.existsSync(rootDir)) {
+        try {
+          fs.writeFileSync(path.resolve(rootDir, 'swagger.json'), swaggerJson);
+        } catch {}
+      }
+      logger.log(`Generated OpenAPI spec at swagger.json`);
+    } catch (err) {
+      logger.warn(`Could not export swagger.json: ${err}`);
     }
-    logger.log(`Generated OpenAPI spec at swagger.json`);
-  } catch (err) {
-    logger.warn(`Could not export swagger.json: ${err}`);
   }
 
   const appPort = process.env.PORT ? parseInt(process.env.PORT, 10) : 3001;

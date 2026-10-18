@@ -22,13 +22,15 @@ import {
   ImportResultDto,
 } from '../dto/api.dto';
 
+const MAX_CSV_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
 @ApiTags('CSV Import & Management')
 @Controller('api/import')
 export class ImportController {
   constructor(private readonly store: PortfolioStore) {}
 
   @Post('trades')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_CSV_SIZE_BYTES } }))
   @ApiOperation({
     summary: 'Import / Re-import trades CSV',
     description: 'Upload a multipart trades.csv file. Validates the entire file (columns, data types, ranges, duplicates, short positions) before atomic replacement in the database.',
@@ -72,7 +74,7 @@ export class ImportController {
   }
 
   @Post('prices')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_CSV_SIZE_BYTES } }))
   @ApiOperation({
     summary: 'Import / Re-import prices CSV',
     description: 'Upload a multipart prices.csv file (as_of, symbol, price_usd). Atomically updates stored price snapshot.',

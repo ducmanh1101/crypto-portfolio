@@ -131,6 +131,19 @@ function toPosition(state: AssetState, currentPrice: Decimal | undefined): Asset
 }
 
 /**
+ * Deterministic comparator for chronological trade replay:
+ * 1. Ascending UTC timestamp
+ * 2. BUY before SELL when timestamps are identical (prevents false short-position errors)
+ * 3. Lexical tradeId tie-breaker
+ */
+export function compareTradesChronologically(a: Trade, b: Trade): number {
+  const timeDiff = a.timestamp.getTime() - b.timestamp.getTime();
+  if (timeDiff !== 0) return timeDiff;
+  if (a.side !== b.side) return a.side === 'BUY' ? -1 : 1;
+  return a.tradeId.localeCompare(b.tradeId);
+}
+
+/**
  * Computes the full portfolio snapshot from a full trade history and a
  * current price snapshot. Trades do not need to be pre-sorted globally —
  * they are grouped by symbol and sorted ascending by timestamp internally,
@@ -156,7 +169,7 @@ export function computePortfolioSnapshot(
 
   const positions: AssetPosition[] = [];
   for (const [symbol, symbolTrades] of tradesBySymbol) {
-    const sorted = [...symbolTrades].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const sorted = [...symbolTrades].sort(compareTradesChronologically);
     const state = replayAssetTrades(symbol as Trade['symbol'], sorted);
 
     // Skip assets that are both empty and have never realized any P&L —

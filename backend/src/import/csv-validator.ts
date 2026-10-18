@@ -8,7 +8,11 @@ import {
   ValidationError,
   ValidationResult,
 } from '../calculation/types';
-import { replayAssetTrades, ShortPositionError } from '../calculation/portfolio-calculator';
+import {
+  compareTradesChronologically,
+  replayAssetTrades,
+  ShortPositionError,
+} from '../calculation/portfolio-calculator';
 
 export const VALID_EXCHANGES: readonly Exchange[] = ['Binance', 'Coinbase'] as const;
 export const VALID_SIDES: readonly Side[] = ['BUY', 'SELL'] as const;
@@ -28,12 +32,17 @@ export const REQUIRED_TRADE_COLUMNS = [
 export const REQUIRED_PRICE_COLUMNS = ['as_of', 'symbol', 'price_usd'];
 
 const ISO_8601_UTC_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]00:?00)$/;
+const FORMULA_PREFIX_REGEX = /^[=+\-@\t\r]/;
+const MAX_DB_NUMERIC = new Decimal('1e18'); // fits numeric(28, 10)
 
 export function isValidUtcIso8601(val: string): boolean {
   if (!val || typeof val !== 'string') return false;
-  if (!ISO_8601_UTC_REGEX.test(val.trim())) return false;
-  const ts = Date.parse(val.trim());
-  return !isNaN(ts);
+  const trimmed = val.trim();
+  if (!ISO_8601_UTC_REGEX.test(trimmed)) return false;
+  const d = new Date(trimmed);
+  if (isNaN(d.getTime())) return false;
+  // Guard against JS Date rollover (e.g. 2026-02-31 rolling into March)
+  return d.toISOString().slice(0, 10) === trimmed.slice(0, 10);
 }
 
 /** One raw CSV row, still strings — as returned by the CSV parser before type coercion. */
@@ -70,6 +79,12 @@ export function validateAndParseRows(rows: RawCsvRow[]): {
     const tradeId = row.trade_id?.trim();
     if (!tradeId) {
       rowErrors.push({ row: rowNum, field: 'trade_id', message: 'trade_id is required' });
+    } else if (tradeId.length > 64 || FORMULA_PREFIX_REGEX.test(tradeId)) {
+      rowErrors.push({
+        row: rowNum,
+        field: 'trade_id',
+        message: `Invalid trade_id "${tradeId}" (max 64 chars, cannot start with formula characters)`,
+      });
     } else if (seenIds.has(tradeId)) {
       rowErrors.push({ row: rowNum, field: 'trade_id', message: `Duplicate trade_id "${tradeId}"` });
     } else {
@@ -118,8 +133,10 @@ export function validateAndParseRows(rows: RawCsvRow[]): {
         rowErrors.push({ row: rowNum, field: 'quantity', message: 'quantity is required' });
       } else {
         quantity = new Decimal(row.quantity.trim());
-        if (!quantity.greaterThan(0)) {
+        if (!quantity.isFinite() || !quantity.greaterThan(0)) {
           rowErrors.push({ row: rowNum, field: 'quantity', message: 'quantity must be greater than zero' });
+        } else if (!quantity.lessThan(MAX_DB_NUMERIC)) {
+          rowErrors.push({ row: rowNum, field: 'quantity', message: 'quantity exceeds maximum supported precision' });
         }
       }
     } catch {
@@ -132,8 +149,10 @@ export function validateAndParseRows(rows: RawCsvRow[]): {
         rowErrors.push({ row: rowNum, field: 'price_usd', message: 'price_usd is required' });
       } else {
         priceUsd = new Decimal(row.price_usd.trim());
-        if (!priceUsd.greaterThan(0)) {
+        if (!priceUsd.isFinite() || !priceUsd.greaterThan(0)) {
           rowErrors.push({ row: rowNum, field: 'price_usd', message: 'price_usd must be greater than zero' });
+        } else if (!priceUsd.lessThan(MAX_DB_NUMERIC)) {
+          rowErrors.push({ row: rowNum, field: 'price_usd', message: 'price_usd exceeds maximum supported precision' });
         }
       }
     } catch {
@@ -146,8 +165,10 @@ export function validateAndParseRows(rows: RawCsvRow[]): {
         rowErrors.push({ row: rowNum, field: 'fee_usd', message: 'fee_usd is required' });
       } else {
         feeUsd = new Decimal(row.fee_usd.trim());
-        if (feeUsd.lessThan(0)) {
+        if (!feeUsd.isFinite() || feeUsd.lessThan(0)) {
           rowErrors.push({ row: rowNum, field: 'fee_usd', message: 'fee_usd must be zero or greater' });
+        } else if (!feeUsd.lessThan(MAX_DB_NUMERIC)) {
+          rowErrors.push({ row: rowNum, field: 'fee_usd', message: 'fee_usd exceeds maximum supported precision' });
         }
       }
     } catch {
@@ -190,7 +211,7 @@ export function validateNoShortPositions(trades: Trade[]): ValidationError[] {
   }
 
   for (const [, symbolTrades] of bySymbol) {
-    const sorted = [...symbolTrades].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    const sorted = [...symbolTrades].sort(compareTradesChronologically);
     try {
       replayAssetTrades(sorted[0].symbol, sorted);
     } catch (err) {
@@ -236,6 +257,7 @@ export function validatePricesImport(
 
   const errors: ValidationError[] = [];
   const prices: PriceSnapshot[] = [];
+  const seenSymbols = new Set<Symbol>();
 
   rows.forEach((row, idx) => {
     const rowNum = idx + 1;
@@ -257,6 +279,14 @@ export function validatePricesImport(
         field: 'symbol',
         message: `Unsupported symbol "${row.symbol}"`,
       });
+    } else if (seenSymbols.has(symbol)) {
+      rowErrors.push({
+        row: rowNum,
+        field: 'symbol',
+        message: `Duplicate price entry for symbol "${symbol}"`,
+      });
+    } else {
+      seenSymbols.add(symbol);
     }
 
     let priceUsd: Decimal | undefined;
@@ -265,8 +295,10 @@ export function validatePricesImport(
         rowErrors.push({ row: rowNum, field: 'price_usd', message: 'price_usd is required' });
       } else {
         priceUsd = new Decimal(row.price_usd.trim());
-        if (!priceUsd.greaterThan(0)) {
+        if (!priceUsd.isFinite() || !priceUsd.greaterThan(0)) {
           rowErrors.push({ row: rowNum, field: 'price_usd', message: 'price_usd must be greater than zero' });
+        } else if (!priceUsd.lessThan(MAX_DB_NUMERIC)) {
+          rowErrors.push({ row: rowNum, field: 'price_usd', message: 'price_usd exceeds maximum supported precision' });
         }
       }
     } catch {

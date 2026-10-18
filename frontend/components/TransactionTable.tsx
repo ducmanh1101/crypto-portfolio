@@ -80,8 +80,17 @@ export function TransactionTable() {
     setPage(1);
   };
 
+  const escapeCsvCell = (val: unknown): string => {
+    const raw = val === null || val === undefined ? '' : String(val);
+    const safe = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+    if (/[",\n\r]/.test(safe)) {
+      return `"${safe.replace(/"/g, '""')}"`;
+    }
+    return safe;
+  };
+
   const exportFilteredCsv = () => {
-    if (trades.length === 0) return;
+    if (displayedTrades.length === 0) return;
     const headers = [
       'trade_id',
       'timestamp',
@@ -93,28 +102,28 @@ export function TransactionTable() {
       'fee_usd',
       'gross_value_usd',
     ];
-    const rows = trades.map((t) => [
-      t.tradeId,
-      t.timestamp,
-      t.exchange,
-      t.symbol,
-      t.side,
-      t.quantity,
-      t.priceUsd,
-      t.feeUsd,
-      t.grossValueUsd,
+    const rows = displayedTrades.map((t) => [
+      escapeCsvCell(t.tradeId),
+      escapeCsvCell(t.timestamp),
+      escapeCsvCell(t.exchange),
+      escapeCsvCell(t.symbol),
+      escapeCsvCell(t.side),
+      escapeCsvCell(t.quantity),
+      escapeCsvCell(t.priceUsd),
+      escapeCsvCell(t.feeUsd),
+      escapeCsvCell(t.grossValueUsd),
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('link');
     const a = document.createElement('a');
     a.setAttribute('href', url);
     a.setAttribute('download', `trades-export-${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (

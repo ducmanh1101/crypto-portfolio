@@ -264,7 +264,11 @@ export function HoldingsTable({ positions, onImportClick }: HoldingsTableProps) 
             {sortedPositions.map((pos) => {
               const qty = parseFloat(pos.quantityHeld) || 0;
               const isClosed = qty === 0;
-              const hasPrice = pos.currentPrice !== null && pos.currentPrice !== undefined && pos.currentPrice !== '';
+              const hasPrice =
+                pos.currentPrice !== null &&
+                pos.currentPrice !== undefined &&
+                pos.currentPrice !== '' &&
+                (parseFloat(pos.currentPrice) || 0) > 0;
               const realized = parseFloat(pos.realizedPnl) || 0;
               const unrealized = parseFloat(pos.unrealizedPnl) || 0;
               const totalPnl = parseFloat(pos.totalPnl) || 0;
